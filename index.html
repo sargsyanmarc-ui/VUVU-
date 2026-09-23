@@ -1,51 +1,300 @@
-async function uploadVideo(event) {
-  const file = event.target.files[0];
-  if (!file) return;
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VUVU</title>
 
-  const { data: userData } = await supabaseClient.auth.getUser();
-  const user = userData.user;
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  if (!user) {
-    alert("Vous devez vous connecter avant de publier.");
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#000;color:#fff;font-family:Arial;overflow:hidden}
+.top,.bottom{position:fixed;left:50%;transform:translateX(-50%);width:min(500px,100%);z-index:20}
+.top{top:0;height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 15px}
+.logo{font-size:28px;font-weight:bold}
+.blue{color:#3388ff}.red{color:#ff3355}.orange{color:#ff8a00}
+button{color:#fff;background:#222;border:0;cursor:pointer}
+.login{padding:8px 14px;border-radius:20px}
+.feed{height:100vh;max-width:500px;margin:auto;overflow-y:auto;scroll-snap-type:y mandatory}
+.card{height:100vh;position:relative;scroll-snap-align:start;background:#111}
+.card video{width:100%;height:100%;object-fit:cover}
+.center{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.info{position:absolute;left:15px;bottom:95px}
+.actions{position:absolute;right:15px;bottom:100px;display:grid;gap:8px;text-align:center}
+.action{width:48px;height:48px;border-radius:50%;font-size:20px}
+.bottom{bottom:0;height:70px;background:#050505;display:grid;grid-template-columns:1fr 1fr 60px 1fr 1fr;align-items:center}
+.nav{background:none;font-size:12px}
+.plus{width:50px;height:38px;border-radius:10px;font-size:26px;color:#000;background:linear-gradient(90deg,#3388ff 0 33%,#fff 33% 66%,#ff3355 66%)}
+</style>
+</head>
+
+<body>
+
+<div class="top">
+  <div class="logo">
+    <span class="blue">VU</span><span class="red">V</span><span class="orange">U</span>
+  </div>
+  <button id="authBtn" class="login" onclick="auth()">Connexion</button>
+</div>
+
+<main id="feed" class="feed">
+  <section class="card">
+    <div class="center">
+      <div>
+        <h1>VUVU</h1>
+        <p>Chargement...</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<nav class="bottom">
+  <button class="nav" onclick="loadFeed()">Accueil</button>
+  <button class="nav" onclick="alert('Recherche bientôt disponible')">Recherche</button>
+  <button class="plus" onclick="document.getElementById('file').click()">+</button>
+  <button class="nav" onclick="alert('Activité bientôt disponible')">Activité</button>
+  <button class="nav" onclick="profile()">Profil</button>
+</nav>
+
+<input id="file" type="file" accept="video/*" hidden onchange="uploadVideo(event)">
+
+<script>
+const sb = supabase.createClient(
+  "https://qfxpdscnwnntpximxjej.supabase.co",
+  "sb_publishable_fwNxSQvBzu6PfTUqVsYLIQ_V2cARbsb"
+);
+
+async function auth(){
+  const choix=prompt("1 = Connexion\n2 = Créer un compte");
+  const email=prompt("Email :");
+  if(!email)return;
+
+  const password=prompt("Mot de passe :");
+  if(!password)return;
+
+  let result;
+
+  if(choix==="2"){
+    result=await sb.auth.signUp({email,password});
+    if(result.error) alert(result.error.message);
+    else alert("Compte créé ✅");
+  }else{
+    result=await sb.auth.signInWithPassword({email,password});
+    if(result.error) alert(result.error.message);
+    else{
+      alert("Connexion réussie ✅");
+      updateAuth();
+    }
+  }
+}
+
+async function updateAuth(){
+  const {data}=await sb.auth.getSession();
+  document.getElementById("authBtn").textContent=
+    data.session ? "Profil" : "Connexion";
+}
+
+async function profile(){
+  const {data}=await sb.auth.getUser();
+
+  if(!data.user){
+    auth();
     return;
   }
 
-  const caption = prompt("Écrivez une description pour la vidéo :") || "";
+  const choix=prompt(
+    "Connecté : "+data.user.email+
+    "\n\n1 = Déconnexion\n2 = Annuler"
+  );
 
-  const extension = file.name.split(".").pop();
-  const fileName = `${Date.now()}.${extension}`;
-  const storagePath = `${user.id}/${fileName}`;
+  if(choix==="1"){
+    await sb.auth.signOut();
+    updateAuth();
+    alert("Déconnecté ✅");
+  }
+}
 
-  const { error: uploadError } = await supabaseClient.storage
-    .from("videos")
-    .upload(storagePath, file);
+async function uploadVideo(event){
+  const file=event.target.files[0];
+  if(!file)return;
 
-  if (uploadError) {
-    alert("Erreur envoi vidéo : " + uploadError.message);
+  const {data}=await sb.auth.getUser();
+  const user=data.user;
+
+  if(!user){
+    alert("Connectez-vous d'abord.");
     return;
   }
 
-  const { data: publicUrlData } = supabaseClient.storage
-    .from("videos")
-    .getPublicUrl(storagePath);
+  const caption=prompt("Description :") || "";
+  const ext=file.name.split(".").pop();
+  const path=user.id+"/"+Date.now()+"."+ext;
 
-  const videoUrl = publicUrlData.publicUrl;
+  const up=await sb.storage.from("videos").upload(path,file);
 
-  const { error: insertError } = await supabaseClient
+  if(up.error){
+    alert(up.error.message);
+    return;
+  }
+
+  const publicData=sb.storage.from("videos").getPublicUrl(path);
+  const url=publicData.data.publicUrl;
+
+  const insert=await sb.from("videos").insert({
+    user_id:user.id,
+    caption:caption,
+    video_url:url,
+    storage_path:path,
+    status:"published"
+  });
+
+  if(insert.error){
+    alert(insert.error.message);
+    return;
+  }
+
+  alert("Vidéo publiée ✅");
+  event.target.value="";
+  loadFeed();
+}
+
+async function loadFeed(){
+  const feed=document.getElementById("feed");
+
+  const {data,error}=await sb
     .from("videos")
-    .insert({
-      user_id: user.id,
-      caption: caption,
-      video_url: videoUrl,
-      storage_path: storagePath,
-      status: "published"
+    .select("id,caption,video_url,created_at")
+    .eq("status","published")
+    .order("created_at",{ascending:false});
+
+  if(error){
+    feed.innerHTML='<div class="center">'+error.message+'</div>';
+    return;
+  }
+
+  if(!data || data.length===0){
+    feed.innerHTML=`
+      <section class="card">
+        <div class="center">
+          <div>
+            <h1>VUVU</h1>
+            <p>Aucune vidéo pour le moment.</p>
+            <p>Connectez-vous puis appuyez sur +</p>
+          </div>
+        </div>
+      </section>`;
+    return;
+  }
+
+  feed.innerHTML=data.map(v=>`
+    <section class="card">
+      <video src="${v.video_url}" playsinline muted loop controls></video>
+
+      <div class="info">
+        <strong>@VUVU</strong>
+        <p>${escapeHtml(v.caption || "")}</p>
+      </div>
+
+      <div class="actions">
+        <button class="action" onclick="likeVideo(${v.id},this)">♥</button>
+        <button class="action" onclick="commentVideo(${v.id})">💬</button>
+        <button class="action" onclick="shareVideo('${v.video_url}')">↗</button>
+      </div>
+    </section>
+  `).join("");
+
+  autoplay();
+}
+
+async function likeVideo(id,button){
+  const {data}=await sb.auth.getUser();
+  if(!data.user){
+    alert("Connectez-vous pour aimer.");
+    return;
+  }
+
+  const existing=await sb
+    .from("likes")
+    .select("video_id")
+    .eq("user_id",data.user.id)
+    .eq("video_id",id)
+    .maybeSingle();
+
+  if(existing.data){
+    await sb.from("likes")
+      .delete()
+      .eq("user_id",data.user.id)
+      .eq("video_id",id);
+
+    button.style.color="white";
+  }else{
+    await sb.from("likes").insert({
+      user_id:data.user.id,
+      video_id:id
     });
 
-  if (insertError) {
-    alert("Erreur publication : " + insertError.message);
+    button.style.color="#ff3355";
+  }
+}
+
+async function commentVideo(id){
+  const {data}=await sb.auth.getUser();
+
+  if(!data.user){
+    alert("Connectez-vous pour commenter.");
     return;
   }
 
-  alert("Vidéo publiée sur VUVU ✅");
-  location.reload();
+  const body=prompt("Votre commentaire :");
+  if(!body)return;
+
+  const {error}=await sb.from("comments").insert({
+    user_id:data.user.id,
+    video_id:id,
+    body:body
+  });
+
+  if(error) alert(error.message);
+  else alert("Commentaire ajouté ✅");
 }
+
+function shareVideo(url){
+  if(navigator.share){
+    navigator.share({
+      title:"VUVU",
+      text:"Découvrez cette vidéo",
+      url:url
+    });
+  }else{
+    navigator.clipboard.writeText(url);
+    alert("Lien copié ✅");
+  }
+}
+
+function autoplay(){
+  const observer=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.intersectionRatio>0.7)
+        e.target.play().catch(()=>{});
+      else
+        e.target.pause();
+    });
+  },{threshold:[0.7]});
+
+  document.querySelectorAll("video").forEach(v=>observer.observe(v));
+}
+
+function escapeHtml(s){
+  return String(s)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;");
+}
+
+updateAuth();
+loadFeed();
+</script>
+
+</body>
+</html>
