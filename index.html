@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VUVU</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #000;
+      color: white;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    .top {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      z-index: 10;
+      background: linear-gradient(#000, transparent);
+    }
+
+    .logo {
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .blue { color: #3388ff; }
+    .red { color: #ff3355; }
+    .orange { color: #ff8a00; }
+
+    .login {
+      background: #222;
+      border: 1px solid #555;
+      color: white;
+      border-radius: 20px;
+      padding: 8px 14px;
+    }
+
+    .feed {
+      height: 100vh;
+      overflow-y: auto;
+      scroll-snap-type: y mandatory;
+    }
+
+    .video {
+      height: 100vh;
+      position: relative;
+      scroll-snap-align: start;
+      background:
+        radial-gradient(circle at 30% 20%, #163b70, transparent 40%),
+        radial-gradient(circle at 70% 70%, #6c1830, transparent 40%),
+        #111;
+    }
+
+    .center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px;
+    }
+
+    .center h1 {
+      font-size: 50px;
+      margin-bottom: 10px;
+    }
+
+    .info {
+      position: absolute;
+      left: 15px;
+      bottom: 90px;
+    }
+
+    .info p {
+      margin-top: 8px;
+    }
+
+    .actions {
+      position: absolute;
+      right: 15px;
+      bottom: 100px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .action {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(30,30,30,.8);
+      color: white;
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    .bottom {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 70px;
+      background: #050505;
+      border-top: 1px solid #333;
+      display: grid;
+      grid-template-columns: 1fr 1fr 65px 1fr 1fr;
+      align-items: center;
+      z-index: 20;
+    }
+
+    .nav {
+      background: none;
+      border: none;
+      color: #aaa;
+      font-size: 12px;
+    }
+
+    .nav.active {
+      color: white;
+      font-weight: bold;
+    }
+
+    .plus {
+      width: 50px;
+      height: 38px;
+      border: none;
+      border-radius: 10px;
+      font-size: 28px;
+      font-weight: bold;
+      color: black;
+      background:
+        linear-gradient(
+          90deg,
+          #3388ff 0%,
+          #3388ff 33%,
+          white 33%,
+          white 66%,
+          #ff3355 66%
+        );
+      justify-self: center;
+    }
+
+    @media (min-width: 700px) {
+      .feed,
+      .top,
+      .bottom {
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .top,
+      .bottom {
+        left: 50%;
+        right: auto;
+        width: 500px;
+        transform: translateX(-50%);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="top">
+    <div class="logo">
+      <span class="blue">VU</span><span class="red">V</span><span class="orange">U</span>
+    </div>
+
+    <button class="login" onclick="alert('Connexion bientôt disponible')">
+      Connexion
+    </button>
+  </div>
+
+  <main class="feed">
+
+    <section class="video">
+      <div class="center">
+        <div>
+          <h1>VUVU</h1>
+          <p>Votre nouvelle plateforme de vidéos courtes</p>
+        </div>
+      </div>
+
+      <div class="info">
+        <strong>@vuvu</strong>
+        <p>Bienvenue sur VUVU 🎬</p>
+      </div>
+
+      <div class="actions">
+        <button class="action" onclick="like(this)">♥</button>
+        <span class="likes">0</span>
+
+        <button class="action">💬</button>
+        <span>0</span>
+
+        <button class="action" onclick="share()">↗</button>
+      </div>
+    </section>
+
+    <section class="video">
+      <div class="center">
+        <div>
+          <h1>Vidéos</h1>
+          <p>Glissez vers le haut pour découvrir les prochaines vidéos.</p>
+        </div>
+      </div>
+
+      <div class="info">
+        <strong>@vuvu</strong>
+        <p>Une expérience simple et moderne</p>
+      </div>
+
+      <div class="actions">
+        <button class="action" onclick="like(this)">♥</button>
+        <span class="likes">0</span>
+        <button class="action">💬</button>
+        <span>0</span>
+        <button class="action" onclick="share()">↗</button>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="bottom">
+    <button class="nav active">Accueil</button>
+    <button class="nav">Recherche</button>
+
+    <button class="plus" onclick="alert('Publication vidéo bientôt disponible')">
+      +
+    </button>
+
+    <button class="nav">Activité</button>
+    <button class="nav">Profil</button>
+  </nav>
+
+  <script>
+    function like(button) {
+      const count = button.parentElement.querySelector(".likes");
+      count.textContent = Number(count.textContent) + 1;
+      button.style.color = "#ff3355";
+    }
+
+    function share() {
+      if (navigator.share) {
+        navigator.share({
+          title: "VUVU",
+          text: "Découvrez VUVU"
+        });
+      } else {
+        alert("Partage bientôt disponible");
+      }
+    }
+  </script>
+
+</body>
+</html>
